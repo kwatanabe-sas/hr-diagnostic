@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HRケイパビリティ診断 | フル版</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:#1E2761;
+  --navy-light:#3A5199;
+  --ice:#EAF0FB;
+  --bg:#F7F8FB;
+  --text:#1A1A2E;
+  --text-light:#5B6478;
+  --accent:#F96167;
+  --accent-bg:#FEE7E8;
+  --good:#10B981;
+  --good-bg:#D1FAE5;
+  --warn:#F59E0B;
+  --warn-bg:#FEF3C7;
+  --border:#DDE2EC;
+  --shadow:0 2px 8px rgba(30,39,97,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;color:var(--text);background:var(--bg);line-height:1.6;font-size:14px}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+
+/* Header */
+header{background:var(--navy);color:#fff;padding:20px 0;box-shadow:var(--shadow)}
+header .container{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+header .brand-left{flex:1;min-width:0}
+header h1{font-size:22px;font-weight:700}
+header .sub{font-size:12px;color:var(--ice);margin-top:4px}
+header .brand-right{text-align:right;font-size:11px;color:var(--ice);line-height:1.4;flex-shrink:0;letter-spacing:.3px}
+header .brand-right .co{font-size:13px;font-weight:600;color:#fff;letter-spacing:.5px;display:block}
+header .brand-right .label{font-size:10px;opacity:.75;display:block;margin-top:1px}
+@media(max-width:600px){header .brand-right{font-size:10px}header .brand-right .co{font-size:11px}}
+
+/* Progress bar */
+.progress-wrapper{background:#fff;border-bottom:1px solid var(--border);padding:12px 0;position:sticky;top:0;z-index:10}
+.progress-bar{height:8px;background:#E1E5ED;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--navy-light),var(--navy));transition:width 0.3s}
+.progress-text{font-size:12px;color:var(--text-light);display:flex;justify-content:space-between}
+
+/* Pages */
+.page{display:none;padding:32px 0;animation:fadeIn .3s}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Welcome */
+.welcome{background:#fff;border-radius:12px;padding:40px;box-shadow:var(--shadow);margin-bottom:24px}
+.welcome h2{font-size:28px;color:var(--navy);margin-bottom:16px}
+.welcome p{color:var(--text-light);margin-bottom:12px;font-size:15px}
+.welcome ul{margin:16px 0 24px 24px;color:var(--text-light)}
+.welcome li{margin-bottom:6px}
+.badge-row{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}
+.badge{background:var(--ice);color:var(--navy);padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600}
+
+/* Form */
+.section-card{background:#fff;border-radius:12px;padding:28px 32px;margin-bottom:20px;box-shadow:var(--shadow)}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--ice)}
+.cluster-badge{background:var(--navy);color:#fff;width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.section-header h2{font-size:18px;color:var(--navy)}
+.section-header .count{font-size:12px;color:var(--text-light);margin-top:2px}
+.area-block{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #E8ECF3}
+.area-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.area-name{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.area-name-text{font-weight:700}
+.area-name-desc{font-size:12px;font-weight:400;color:var(--text-light);line-height:1.5;flex:1;min-width:200px}
+.area-num{background:var(--ice);color:var(--navy);width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.q-row{margin-bottom:16px;padding:12px;border-radius:8px;background:#FAFBFD;border:1px solid #EEF1F6}
+.q-row.q-importance{background:#FFF8E8;border-color:#F5DDA0}
+.q-row.q-importance .q-label-prefix{background:var(--warn);color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;margin-right:8px;font-weight:700}
+.q-row.q-capability .q-label-prefix{background:var(--navy-light);color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;margin-right:8px;font-weight:700}
+.q-text{font-size:13.5px;margin-bottom:10px;color:var(--text);line-height:1.5}
+.likert{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.likert label{cursor:pointer;text-align:center;padding:10px 4px;border:2px solid var(--border);border-radius:8px;background:#fff;font-size:11px;transition:all .15s;color:var(--text-light)}
+.likert label:hover{border-color:var(--navy-light);background:var(--ice)}
+.likert input{display:none}
+.likert input:checked + .likert-content{color:#fff}
+.likert label:has(input:checked){background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700;box-shadow:0 2px 4px rgba(30,39,97,.2)}
+.likert .num{display:block;font-size:18px;font-weight:700;margin-bottom:2px}
+
+/* Context form */
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.field select,.field input,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff}
+.field select:focus,.field input:focus,.field textarea:focus{outline:none;border-color:var(--navy-light);box-shadow:0 0 0 3px var(--ice)}
+.field textarea{min-height:80px;resize:vertical}
+.checkbox-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+.checkbox-grid label{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12.5px;background:#fff;transition:all .15s;white-space:nowrap}
+.checkbox-grid label:hover{border-color:var(--navy-light);background:var(--ice)}
+.checkbox-grid label:has(input:checked){background:var(--ice);border-color:var(--navy);color:var(--navy);font-weight:600}
+.checkbox-grid input[type=checkbox]{margin:0;accent-color:var(--navy)}
+
+/* Buttons */
+.nav-buttons{display:flex;justify-content:space-between;gap:12px;margin-top:24px}
+.btn{padding:12px 24px;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy-light);transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,39,97,.3)}
+.btn-primary:disabled{background:#C8CCD4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:#fff;color:var(--navy);border:2px solid var(--navy)}
+.btn-secondary:hover{background:var(--ice)}
+.btn-large{padding:16px 36px;font-size:16px}
+
+/* Results */
+.results-hero{background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;padding:40px;border-radius:12px;margin-bottom:24px;text-align:center}
+.results-hero h2{font-size:28px;margin-bottom:8px}
+.results-hero .overall-score{font-size:64px;font-weight:800;margin:16px 0;letter-spacing:-2px}
+.results-hero .label{font-size:13px;opacity:.85}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.kpi-card{background:#fff;border-radius:10px;padding:20px;box-shadow:var(--shadow);border-left:4px solid var(--navy)}
+.kpi-card .kpi-label{font-size:11px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.kpi-card .kpi-value{font-size:28px;font-weight:700;color:var(--navy);line-height:1.1}
+.kpi-card .kpi-detail{font-size:12px;color:var(--text-light);margin-top:6px}
+.kpi-card.danger{border-left-color:var(--accent)}
+.kpi-card.danger .kpi-value{color:var(--accent)}
+.kpi-card.success{border-left-color:var(--good)}
+.kpi-card.success .kpi-value{color:var(--good)}
+
+.chart-card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+.chart-card h3{font-size:16px;color:var(--navy);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.chart-card .chart-wrap{position:relative;height:380px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr}}
+
+.matrix-card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+.matrix-card .legend{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:11.5px;margin-top:12px;color:var(--text-light)}
+.matrix-card .legend span{display:flex;align-items:center}
+.legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+
+.priority-list{margin-top:16px}
+.priority-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;margin-bottom:6px;background:#FAFBFD;border:1px solid #EEF1F6}
+.priority-item.urgent{background:var(--accent-bg);border-color:#F5C6C9}
+.priority-rank{font-weight:700;color:var(--navy);min-width:28px}
+.priority-name{flex:1;font-size:13.5px}
+.priority-scores{font-size:11px;color:var(--text-light)}
+.priority-scores strong{color:var(--text);font-size:13px}
+
+.export-row{display:flex;gap:12px;justify-content:center;margin:32px 0;flex-wrap:wrap}
+
+/* Auto-save indicator */
+.autosave{position:fixed;bottom:16px;right:16px;background:rgba(30,39,97,0.9);color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;opacity:0;transition:opacity .3s;z-index:100}
+.autosave.show{opacity:1}
+
+footer{text-align:center;padding:24px;font-size:11px;color:var(--text-light)}
+
+@media print{
+  header,.progress-wrapper,.nav-buttons,.export-row,.autosave{display:none!important}
+  body{background:#fff}
+  .page{display:block!important;page-break-after:always}
+  .page:not(#page-results){display:none!important}
+}
+
+.area-def-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+@media(max-width:900px){.area-def-grid{grid-template-columns:1fr}}
+.area-def-card{background:#FAFBFD;border-radius:8px;padding:14px 16px;border:1px solid #EEF1F6;border-left:5px solid var(--navy)}
+.area-def-card.priority-strong{border-left-color:var(--accent)}
+.area-def-card.priority-strength{border-left-color:#1D9E75}
+.area-def-card.priority-medium{border-left-color:#EF9F27}
+.area-def-card.priority-low{border-left-color:#185FA5}
+.area-def-head{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.area-def-num{font-size:20px;font-weight:700;color:var(--navy);min-width:24px}
+.area-def-name{font-size:15px;font-weight:700;color:var(--navy)}
+.area-def-cluster{font-size:10px;color:var(--text-light);background:var(--ice);padding:2px 8px;border-radius:10px}
+.area-def-scores{font-size:11px;color:var(--text-light);margin-bottom:8px;padding:4px 8px;background:#fff;border-radius:6px;display:inline-block}
+.area-def-scores strong{color:var(--text);font-size:13px}
+.area-def-desc{font-size:12.5px;color:var(--text);line-height:1.55;margin-bottom:8px}
+.area-def-topics-label{font-size:10px;color:var(--text-light);margin-right:6px;font-weight:600}
+.topic-tag{display:inline-block;background:#fff;border:1px solid #E1E5ED;padding:2px 8px;border-radius:10px;margin:2px 2px;font-size:10.5px;color:var(--navy)}
+.area-def-priority{font-size:10px;font-weight:700;padding:2px 10px;border-radius:10px}
+.priority-strong .area-def-priority{background:var(--accent-bg);color:var(--accent)}
+.priority-strength .area-def-priority{background:#D1FAE5;color:#1D9E75}
+.priority-medium .area-def-priority{background:#FEF3C7;color:#B45309}
+.priority-low .area-def-priority{background:#DBEAFE;color:#185FA5}
+
+
+.cluster-def-list{display:flex;flex-direction:column;gap:6px;height:380px;overflow-y:auto}
+.cluster-def-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border-radius:8px;border:1px solid #EEF1F6}
+.cluster-def-row:nth-child(odd){background:#fff}
+.cluster-def-badge{flex-shrink:0;width:34px;height:34px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border-radius:6px;font-family:Arial}
+.cluster-def-body{flex:1;min-width:0}
+.cluster-def-name{font-size:12.5px;font-weight:700;color:var(--navy);line-height:1.3}
+.cluster-def-desc{font-size:10.5px;color:var(--text-light);margin-top:2px;line-height:1.3}
+.cluster-def-areas{font-size:10px;color:#B45309;font-weight:600;flex-shrink:0;text-align:right}
+
+.rank-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.rank-table th{background:var(--navy);color:#fff;padding:10px 8px;text-align:center;font-size:12px;font-weight:700}
+.rank-table td{padding:10px 8px;border-bottom:0.5px solid var(--border);vertical-align:middle}
+.rank-table tr:nth-child(even) td{background:#FAFBFD}
+.rank-table .col-rank{text-align:center;width:50px;color:var(--text-light)}
+.rank-table .col-name{font-weight:600;color:var(--text)}
+.rank-table .col-cluster{text-align:center;width:80px;color:var(--text-light);font-size:11px}
+.rank-table .col-num{text-align:center;width:80px;font-weight:700}
+.rank-table .col-gap{text-align:center;width:80px;font-weight:700}
+.rank-table .gap-positive{color:var(--accent)}
+.rank-table .gap-negative{color:#10B981}
+.rank-table .col-priority{text-align:center;width:130px}
+.priority-pill{display:inline-block;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700}
+.priority-pill.strong{background:var(--accent-bg);color:var(--accent)}
+.priority-pill.strength{background:#D1FAE5;color:#1D9E75}
+.priority-pill.medium{background:#FEF3C7;color:#B45309}
+.priority-pill.low{background:#DBEAFE;color:#185FA5}
+.matrix-counts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.matrix-count-card{background:#fff;border:1px solid;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.matrix-count-card .lbl{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.matrix-count-card .lbl .dot{width:12px;height:12px;border-radius:50%}
+.matrix-count-card .cnt{font-size:13px;color:var(--text-light)}
+.matrix-count-card .cnt strong{font-size:18px;color:var(--text);margin-right:2px}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="brand-left">
+      <h1>HR Capability Assessment <span style="background:#1D9E75;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;margin-left:8px;vertical-align:middle">フル版</span></h1>
+      <div class="sub">6ドメイン × 16領域 ／ 94問</div>
+    </div>
+    <div class="brand-right">
+      <span class="co">software agency system co.,ltd</span>
+      <span class="label">Provided by</span>
+    </div>
+  </div>
+</header>
+
+<div class="progress-wrapper">
+  <div class="container">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text">
+      <span id="progressLabel">準備中</span>
+      <span id="progressCount">0 / 94</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- Welcome page -->
+<div class="page active" id="page-welcome">
+  <div class="welcome">
+    <h2>HRケイパビリティ診断（フル版）</h2>
+    <p>本診断は、貴社の<strong>HRケイパビリティ（組織の強み・遂行能力）</strong>を <strong>16の領域</strong> で評価します。</p>
+    <div class="badge-row">
+      <span class="badge">所要時間 約15〜20分</span>
+      <span class="badge">設問数 94問</span>
+      <span class="badge">途中保存可能（自動）</span>
+      <span class="badge">完了後すぐに結果表示</span>
+    </div>
+    <p><strong>診断の流れ：</strong></p>
+    <ul>
+      <li>① 組織情報・回答者情報（8問）</li>
+      <li>② 6ドメイン × 16領域の重要度・能力評価（86問）</li>
+      <li>③ 結果ダッシュボード（スコア、ランキング、Need-to-Actマトリックス）</li>
+      <li>④ 結果のエクスポート（JSON/CSV/印刷）</li>
+    </ul>
+    <p style="font-size:12px;color:var(--text-light);margin-top:16px">※ 回答内容はブラウザのローカルストレージにのみ保存され、サーバには送信されません。</p>
+    <div class="nav-buttons" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="loadDraft()">前回の続きから</button>
+      <button class="btn btn-primary btn-large" onclick="startSurvey()">診断を開始する →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Context page -->
+<div class="page" id="page-context">
+  <div class="section-card">
+    <div class="section-header">
+      <div class="cluster-badge">i</div>
+      <div><h2>組織・回答者情報</h2><div class="count">8問</div></div>
+    </div>
+    <div id="contextFields"></div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="goPage('page-welcome')">← 戻る</button>
+      <button class="btn btn-primary" id="contextNextBtn" onclick="goPage('page-survey-0')">次へ：診断開始 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Survey pages (one per cluster) - dynamically generated -->
+<div id="surveyPages"></div>
+
+<!-- Results page -->
+<div class="page" id="page-results">
+  <div class="results-hero">
+    <h2>診断結果</h2>
+    <div class="label">総合HR成熟度スコア</div>
+    <div class="overall-score" id="overallScore">—</div>
+    <div class="label" id="overallLabel">—</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card success">
+      <div class="kpi-label">最も強い領域</div>
+      <div class="kpi-value" id="topStrength">—</div>
+      <div class="kpi-detail" id="topStrengthScore">—</div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-label">最大のギャップ</div>
+      <div class="kpi-value" id="topGap">—</div>
+      <div class="kpi-detail" id="topGapDetail">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">最優先（要対応）</div>
+      <div class="kpi-value" id="needActCount">—</div>
+      <div class="kpi-detail">最優先で取り組むべき領域</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">維持・強化（強み領域）</div>
+      <div class="kpi-value" id="strengthCount">—</div>
+      <div class="kpi-detail">高重要度かつ高能力の領域</div>
+    </div>
+  </div>
+
+  <!-- Section 2: Radar + Cluster definitions -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>クラスター別スコア（重要度 vs 能力）</h3>
+      <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>6ドメインの内容</h3>
+      <div id="clusterDefList" class="cluster-def-list"></div>
+    </div>
+  </div>
+
+  <!-- Section 3: 4-quadrant matrix (full width) -->
+  <div class="matrix-card">
+    <h3>4象限優先度マトリクス（重要度 vs 能力）</h3>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:8px">16領域を「将来重要度」と「現在能力」の2軸で4象限分類。最優先（左上の赤）が顧客課題の本丸です。</div>
+    <div class="chart-wrap" style="height:520px"><canvas id="matrixChart"></canvas></div>
+    <div id="matrixCounts" class="matrix-counts"></div>
+  </div>
+
+  <!-- Section 4: Top priorities + Strengths (2-column) -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3 style="color:var(--accent)">最優先で取り組むべき領域 Top 5</h3>
+      <div id="priorityList" class="priority-list"></div>
+    </div>
+    <div class="chart-card">
+      <h3 style="color:#1D9E75">強み領域 Top 5</h3>
+      <div id="strengthList" class="priority-list"></div>
+    </div>
+  </div>
+
+  <!-- Section 5: Full ranking table -->
+  <div class="chart-card">
+    <h3>16領域 全体ランキング</h3>
+    <table class="rank-table" id="rankTable">
+      <thead>
+        <tr><th>順位</th><th>領域</th><th>クラスター</th><th>重要度</th><th>能力</th><th>ギャップ</th><th>優先度</th></tr>
+      </thead>
+      <tbody id="rankTableBody"></tbody>
+    </table>
+    <div style="font-size:11px;color:var(--text-light);margin-top:12px;font-style:italic">※ ギャップ（重要度 - 能力）が正の値ほど対応必要度が高い。負の値は能力が重要度を上回る強み領域。</div>
+  </div>
+
+
+  <div class="chart-card">
+    <h3>16領域の定義と評価結果</h3>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:8px">各領域に何が含まれるかと、貴社の評価結果を併せて表示します。</div>
+    <div id="areaDefList" class="area-def-grid"></div>
+  </div>
+
+  <div class="export-row">
+    <button class="btn btn-secondary" onclick="exportJSON()">JSON ダウンロード</button>
+    <button class="btn btn-secondary" onclick="exportCSV()">CSV ダウンロード</button>
+    <button class="btn btn-secondary" onclick="window.print()">印刷／PDF</button>
+    <button class="btn btn-primary" onclick="restartSurvey()">最初からやり直す</button>
+  </div>
+</div>
+
+</div>
+
+<div class="autosave" id="autosaveTip">自動保存しました</div>
+
+<footer>
+  HRケイパビリティ診断 v1.0（フル版） ／ Powered by Creating People Advantage 2026 framework
+</footer>
+
+<script id="QDATA">
+// 28領域 × (1重要度 + 3能力) = 112 + 8文脈 = 120問
+const QUESTIONS_DATA = {
+  contextQuestions: [
+    {
+      id: "ctx_industry",
+      text: "貴社の業界を選択してください",
+      type: "select",
+      options: [
+        "製造業",
+        "金融",
+        "情報通信",
+        "小売・流通",
+        "サービス業",
+        "建設・不動産",
+        "医療・ヘルスケア",
+        "教育",
+        "公共・行政",
+        "その他"
+      ]
+    },
+    {
+      id: "ctx_size",
+      text: "従業員規模（連結ベース）",
+      type: "select",
+      options: [
+        "100名未満",
+        "100-500名",
+        "500-1,000名",
+        "1,000-5,000名",
+        "5,000-10,000名",
+        "10,000名以上"
+      ]
+    },
+    {
+      id: "ctx_revenue",
+      text: "売上規模（年商）",
+      type: "select",
+      options: [
+        "10億円未満",
+        "10-100億円",
+        "100-500億円",
+        "500-1,000億円",
+        "1,000-5,000億円",
+        "5,000億円以上"
+      ]
+    },
+    {
+      id: "ctx_role",
+      text: "回答者の役割",
+      type: "select",
+      options: [
+        "CHRO・人事役員",
+        "人事部長",
+        "HRBP",
+        "人事担当者",
+        "事業部門責任者",
+        "経営層（CEO/COO等）",
+        "その他"
+      ]
+    },
+    {
+      id: "ctx_experience",
+      text: "人事領域の経験年数",
+      type: "select",
+      options: [
+        "1年未満",
+        "1-3年",
+        "3-5年",
+        "5-10年",
+        "10-20年",
+        "20年以上"
+      ]
+    },
+    {
+      id: "ctx_transformation",
+      text: "過去3年で経験した組織変革（複数選択可）",
+      type: "multi",
+      options: [
+        "デジタル変革",
+        "AI導入・活用",
+        "組織再編・統合",
+        "M&A",
+        "人事制度改革",
+        "リモートワーク導入",
+        "事業ポートフォリオ転換",
+        "特になし"
+      ]
+    },
+    {
+      id: "ctx_priority",
+      text: "今後3年で最優先の経営アジェンダ（最大3つ）",
+      type: "multi",
+      max: 3,
+      options: [
+        "売上成長",
+        "利益改善",
+        "新規事業創出",
+        "DX・AI推進",
+        "人材確保・育成",
+        "組織改革",
+        "サステナビリティ",
+        "グローバル化",
+        "M&A",
+        "コスト削減"
+      ]
+    },
+    {
+      id: "ctx_challenge",
+      text: "人事領域で最も重大な課題（自由記述）",
+      type: "text"
+    }
+  ],
+  clusters: [
+    {
+      id: "D1",
+      name: "人事戦略・組織開発",
+      areas: [
+        {
+          num: 1,
+          name: "HR戦略",
+          capability: [
+            "人事戦略文書が経営計画と明確に連動している",
+            "HR施策のKPIが事業KPIに紐づいて運用されている",
+            "経営会議で定常的にHR課題が議論されている"
+          ]
+        },
+        {
+          num: 2,
+          name: "戦略的要員計画",
+          capability: [
+            "職種×スキル×地域別の3-5年要員計画が整備されている",
+            "離職率を織り込んだ要員シミュレーションが運用されている",
+            "採用計画が事業計画と整合し、定期的に見直されている"
+          ]
+        },
+        {
+          num: 3,
+          name: "HR経営管理・アナリティクス",
+          capability: [
+            "主要なHR施策ごとにビジネスケースが作成されている",
+            "四半期ごとにHR投資のレビューが行われている",
+            "離職予測等の予測分析がHR・経営判断に活用されている",
+            "経営層にリアルタイムで届くHRダッシュボードが整備されている"
+          ]
+        },
+        {
+          num: 4,
+          name: "組織風土・文化",
+          capability: [
+            "MVV（ミッション・ビジョン・バリュー）が社員に広く認知・共感されている",
+            "行動規範が評価制度に組み込まれて運用されている",
+            "カルチャーサーベイが定期実施され、改善アクションに繋がっている"
+          ]
+        }
+      ]
+    },
+    {
+      id: "D2",
+      name: "採用・ブランディング戦略",
+      areas: [
+        {
+          num: 5,
+          name: "採用・オンボーディング",
+          capability: [
+            "自社EVPが明文化され社員に浸透している",
+            "重要ポジションの採用充足日数が管理・短縮されている",
+            "採用プロセスが標準化され、データドリブンに運営されている",
+            "入社後90日定着率が高水準で維持されている",
+            "構造化されたオンボーディングプログラムが運用されている"
+          ]
+        }
+      ]
+    },
+    {
+      id: "D3",
+      name: "人材育成・リスキリング",
+      areas: [
+        {
+          num: 6,
+          name: "人材育成・タレントマネジメント",
+          capability: [
+            "全社のスキル分類体系（スキルタクソノミー）が整備されている",
+            "社員一人あたりの年間学習時間が確保・管理されている",
+            "主要ポジションのサクセッションプランが整備されている",
+            "ハイポテンシャル人材の特定基準・育成プロセスが確立されている",
+            "重要ポジションの内部充足率が高水準で維持されている"
+          ]
+        },
+        {
+          num: 7,
+          name: "リーダーシップ開発",
+          capability: [
+            "階層別リーダーシップ研修が体系的に整備されている",
+            "マネージャー配下のエンゲージメントスコアが高水準である",
+            "次世代リーダーパイプラインが計画的に育成されている"
+          ]
+        },
+        {
+          num: 8,
+          name: "変革の推進",
+          capability: [
+            "変革プロジェクトに明確なチェンジマネジメント計画がある",
+            "変革時の社員サーベイが実施され、施策に反映されている",
+            "過去の変革プロジェクトの成功率が高水準である",
+            "チェンジリーダーの育成体系が整備されている"
+          ]
+        }
+      ]
+    },
+    {
+      id: "D4",
+      name: "人的資本経営対応",
+      areas: [
+        {
+          num: 9,
+          name: "評価・報酬体系",
+          capability: [
+            "業績・行動評価基準が明文化され、社員に周知されている",
+            "評価面談が四半期以上の頻度で実施されている",
+            "職務等級（ジョブグレード）制度が整備されている",
+            "報酬が業績・成果と連動して運用されている",
+            "非金銭的な表彰・サンクスの仕組みが運用されている"
+          ]
+        },
+        {
+          num: 10,
+          name: "DE&I・サステナビリティ",
+          capability: [
+            "DE&I関連KPIが設定され、進捗が管理されている",
+            "採用・登用プロセスでバイアス低減策が運用されている",
+            "ESG指標が経営評価・役員報酬に組み込まれている",
+            "人的資本開示が高度化され、投資家評価に貢献している"
+          ]
+        },
+        {
+          num: 11,
+          name: "労務・コンプライアンス・安全",
+          capability: [
+            "就業規則が法令変更に応じて適時更新されている",
+            "労使協議の場が定例化され機能している",
+            "苦情・相談窓口（ハラスメント含む）が実効的に機能している",
+            "労災発生率が低水準に維持されている",
+            "健康診断・産業医面談が高い受診率で運用されている",
+            "ストレスチェックの結果が改善アクションに活用されている"
+          ]
+        },
+        {
+          num: 12,
+          name: "組織開発・働き方",
+          capability: [
+            "組織設計が事業環境変化に応じて柔軟に見直されている",
+            "スパン・オブ・コントロールが適正範囲で管理されている",
+            "部門間連携・コラボレーションが指標で測定・改善されている",
+            "ハイブリッド・リモートワークが制度化され機能している",
+            "働き方に対する社員満足度が高水準で維持されている",
+            "生産性指標が継続的に測定・改善されている"
+          ]
+        },
+        {
+          num: 13,
+          name: "HR運営モデル",
+          capability: [
+            "HRBP/CoE/SSの役割分担が明確に運営されている",
+            "HR部門の意思決定スピードが事業ニーズに即応している",
+            "HR業務の集約（シェアードサービス化）と標準化が進んでいる",
+            "HR部門に対する事業部門NPSが高水準である",
+            "HR部門のスキル要件が定義され、計画的に育成されている",
+            "HRBPが事業を深く理解し、事業部門と協働している"
+          ]
+        }
+      ]
+    },
+    {
+      id: "D5",
+      name: "HR DX・Tech実装",
+      areas: [
+        {
+          num: 14,
+          name: "HRテック選定・導入",
+          capability: [
+            "HR ITは統合され、データが一元管理されている",
+            "HRデータの品質・信頼性が高水準である",
+            "主要HRシステム間がAPIで連携し、データ連携が自動化されている",
+            "HRシステムのクラウド化が進んでいる",
+            "HR業務（勤怠・申請・問合せ等）の自動化率が高水準である",
+            "社員・マネージャーのセルフサービス利用が定着している"
+          ]
+        },
+        {
+          num: 15,
+          name: "AIの導入・推進",
+          capability: [
+            "GenAI活用ユースケースが組織的に特定・実装されている",
+            "AIガバナンス（プライバシー・セキュリティ）が整備されている",
+            "AI倫理ガイドラインが策定され、社員に周知されている",
+            "AI活用人材のスキル要件が定義され、育成が進んでいる"
+          ]
+        }
+      ]
+    },
+    {
+      id: "D6",
+      name: "従業員エンゲージメント向上",
+      areas: [
+        {
+          num: 16,
+          name: "エンゲージメント・ウェルビーイング",
+          capability: [
+            "エンゲージメントサーベイが定期的（年1回以上）に実施されている",
+            "サーベイ結果が改善アクションに繋がりPDCAが機能している",
+            "メンタルヘルス・ウェルビーイング施策が体系的に提供されている"
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+
+const AREA_INFO = {
+  "1": {
+    "desc": "経営戦略と人事戦略を一体化させ企業の生産性と競争力を高める包括的な方針・計画。",
+    "topics": ["経営戦略連動", "HR施策ポートフォリオ", "CHROコーチング", "経営会議HRアジェンダ"]
+  },
+  "2": {
+    "desc": "事業目標・外部トレンド・コンピテンシー要件をもとに、職務体系とスキル分類を含めた中長期の労働力需給シナリオを計画。",
+    "topics": ["ジョブアーキテクチャ", "スキルタクソノミー", "需給シミュレーション", "重要ポジション特定"]
+  },
+  "3": {
+    "desc": "HRを利益の源泉としてKPIでHRのコスト・効率・効果・インパクトを測定。",
+    "topics": ["HR ROI/KPI", "ピープルアナリティクス", "離職予測", "HRダッシュボード"]
+  },
+  "4": {
+    "desc": "ビジョン・ミッションを策定・浸透させ、組織目標達成に必要な姿勢・行動を支える企業文化の実装と維持。",
+    "topics": ["MVV策定", "行動規範", "カルチャーサーベイ", "ストーリーテリング"]
+  },
+  "5": {
+    "desc": "採用ニーズの定義から候補者の獲得・転換、新入社員の文化的・専門的・事務的な統合の設計と運用。",
+    "topics": ["EVP", "採用ブランディング", "選考プロセス標準化", "オンボーディング", "メンター制度"]
+  },
+  "6": {
+    "desc": "人材のスキル・適正・行動特性などを客観的に測定・評価して、キャリアパス提供・重要ポジションへの配置を実施。",
+    "topics": ["スキル可視化", "リスキリング", "サクセッション", "ナインボックス", "次世代リーダー育成"]
+  },
+  "7": {
+    "desc": "研修・コーチング等の施策を通じて、組織・チーム・個人の目標達成に向けて他者を動機づけ・牽引できるリーダーを育成。",
+    "topics": ["新任マネージャー研修", "エグゼクティブコーチング", "360度評価", "チェンジリーダー"]
+  },
+  "8": {
+    "desc": "チェンジリーダーの創出、財務・運営面の再構築を含む、HR視点での事業変革の主導。",
+    "topics": ["チェンジマネジメント", "M&A PMI", "変革コミュニケーション", "ADKARフレーム"]
+  },
+  "9": {
+    "desc": "個人業績を報酬・インセンティブ・キャリア開発機会と連動させる仕組み。",
+    "topics": ["評価制度", "OKR/MBO", "ジョブグレード", "報酬テーブル", "ピアボーナス・表彰"]
+  },
+  "10": {
+    "desc": "サステナビリティ目標の推進（人的資本経営に基づく業績評価の実装など）、コア事業と人事戦略への組み込み。",
+    "topics": ["DEI戦略", "バイアス低減", "ERG", "ESG指標", "人的資本開示"]
+  },
+  "11": {
+    "desc": "労務管理の徹底、職場の安全衛生規制への準拠、リスク管理、産業医療サービスの提供。",
+    "topics": ["就業規則", "労使協議", "ハラスメント窓口", "産業保健", "ストレスチェック", "復職支援"]
+  },
+  "12": {
+    "desc": "人の能力とテクノロジーを融合し、顧客中心で変化に俊敏に対応できる組織設計と柔軟な働き方支援。",
+    "topics": ["アジャイル組織", "スパン適正化", "ハイブリッドワーク", "人機協働", "コラボレーション"]
+  },
+  "13": {
+    "desc": "事業インパクトに寄与する効果的・効率的なHR組織設計。",
+    "topics": ["HRBPモデル", "CoE/SSC", "HR人材育成", "シェアードサービス", "HRデータサイエンス"]
+  },
+  "14": {
+    "desc": "HRテック導入により人事業務の自動化・効率化、大幅な業務負担の軽減を実現。",
+    "topics": ["HCMクラウド", "データ統合基盤", "RPA/BPA", "セルフサービス", "API連携", "チャットボット"]
+  },
+  "15": {
+    "desc": "AIを導入することで一人一人の生産性を向上。",
+    "topics": ["GenAI活用", "AIガバナンス", "AI倫理", "AIリテラシー研修", "プロンプトエンジニアリング"]
+  },
+  "16": {
+    "desc": "心理的安全性のある職場の構築を含めた、エンゲージメント・定着・ウェルビーイング向上のためのツールと仕組み導入。",
+    "topics": ["エンゲージメントサーベイ", "パルス調査", "EAP", "メンタルヘルス", "心理的安全性"]
+  }
+};
+
+const CLUSTER_DEFS = [
+  { id: "D1", name: "人事戦略・組織開発", desc: "経営戦略との整合・要員計画・データ分析・組織文化", areas: "1, 2, 3, 4" },
+  { id: "D2", name: "採用・ブランディング戦略", desc: "EVP・採用プロセス・オンボーディング", areas: "5" },
+  { id: "D3", name: "人材育成・リスキリング", desc: "タレントマネジメント・リーダーシップ・変革推進", areas: "6, 7, 8" },
+  { id: "D4", name: "人的資本経営対応", desc: "評価・報酬・DE&I・労務・働き方・HR運営モデル", areas: "9, 10, 11, 12, 13" },
+  { id: "D5", name: "HR DX・Tech実装", desc: "HRテック・データ基盤・GenAI活用", areas: "14, 15" },
+  { id: "D6", name: "従業員エンゲージメント向上", desc: "サーベイ・ウェルビーイング・心理的安全性", areas: "16" }
+];
+
+
+// Verify count
+let q = QUESTIONS_DATA.contextQuestions.length;
+QUESTIONS_DATA.clusters.forEach(c => c.areas.forEach(a => { q += 1 + a.capability.length; }));
+
+
+// ====== App state ======
+const STORAGE_KEY = "hr_diagnostic_16_v2";
+const LIKERT_LABELS_IMP = ["極めて低い","低い","中程度","高い","非常に高い"];
+const LIKERT_LABELS_CAP = ["全く実施できていない","ほとんどできていない","部分的に実施","おおむね実施","非常に効果的に実施"];
+
+const state = {
+  responses: {},  // qid -> value
+  totalQuestions: 94,
+  currentPage: "page-welcome"
+};
+
+// ====== Initialization ======
+function init() {
+  buildContextForm();
+  buildSurveyPages();
+  loadFromStorage();
+  syncUIFromState();
+  updateProgress();
+}
+
+function syncUIFromState() {
+  Object.keys(state.responses).forEach(qid => {
+    const v = state.responses[qid];
+    if (Array.isArray(v)) {
+      const cbs = document.querySelectorAll('input[type=checkbox][data-qid="' + qid + '"]');
+      cbs.forEach(cb => { cb.checked = v.includes(cb.value); });
+    } else if (typeof v === 'number') {
+      const radio = document.querySelector('input[type=radio][data-qid="' + qid + '"][value="' + v + '"]');
+      if (radio) radio.checked = true;
+    } else if (typeof v === 'string' && v) {
+      const el = document.getElementById(qid);
+      if (el) el.value = v;
+    }
+  });
+}
+
+function buildContextForm() {
+  const root = document.getElementById("contextFields");
+  let html = "";
+  QUESTIONS_DATA.contextQuestions.forEach((q,i) => {
+    html += `<div class="field"><label>Q${i+1}. ${q.text}</label>`;
+    if (q.type === "select") {
+      html += `<select onchange="saveResponse('${q.id}',this.value)" id="${q.id}"><option value="">選択してください</option>`;
+      q.options.forEach(o => html += `<option value="${o}">${o}</option>`);
+      html += `</select>`;
+    } else if (q.type === "multi") {
+      html += `<div class="checkbox-grid">`;
+      q.options.forEach(o => {
+        html += `<label><input type="checkbox" data-qid="${q.id}" value="${o}" onchange="saveMultiResponse('${q.id}', this, ${q.max||0})">${o}</label>`;
+      });
+      html += `</div>`;
+    } else if (q.type === "text") {
+      html += `<textarea placeholder="任意" oninput="saveResponse('${q.id}',this.value)" id="${q.id}"></textarea>`;
+    }
+    html += `</div>`;
+  });
+  root.innerHTML = html;
+}
+
+function buildSurveyPages() {
+  const root = document.getElementById("surveyPages");
+  let html = "";
+  QUESTIONS_DATA.clusters.forEach((cluster, ci) => {
+    const isLast = ci === QUESTIONS_DATA.clusters.length - 1;
+    const nextPage = isLast ? "page-results" : `page-survey-${ci+1}`;
+    const prevPage = ci === 0 ? "page-context" : `page-survey-${ci-1}`;
+    html += `<div class="page" id="page-survey-${ci}">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="cluster-badge">${cluster.id}</div>
+          <div><h2>${cluster.name}</h2><div class="count">${cluster.areas.length}領域 ／ ${cluster.areas.reduce((s,a)=>s+1+a.capability.length,0)}問</div></div>
+        </div>`;
+    cluster.areas.forEach(area => {
+      const _areaDesc = (typeof AREA_INFO !== "undefined" && AREA_INFO[area.num]) ? AREA_INFO[area.num].desc : "";
+      html += `<div class="area-block">
+        <div class="area-name"><span class="area-num">${area.num}</span><span class="area-name-text">${area.name}</span><span class="area-name-desc">${_areaDesc}</span></div>`;
+      // Importance question
+      const impId = `q_${area.num}_imp`;
+      html += `<div class="q-row q-importance">
+        <div class="q-text"><span class="q-label-prefix">重要度</span>この領域は今後3年の事業戦略実現において重要だ</div>
+        ${renderLikert(impId, LIKERT_LABELS_IMP)}
+      </div>`;
+      // Capability questions
+      area.capability.forEach((stmt, si) => {
+        const capId = `q_${area.num}_cap_${si+1}`;
+        html += `<div class="q-row q-capability">
+          <div class="q-text"><span class="q-label-prefix">能力</span>${stmt}</div>
+          ${renderLikert(capId, LIKERT_LABELS_CAP)}
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    html += `<div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="goPage('${prevPage}')">← 戻る</button>
+      <button class="btn btn-primary" onclick="${isLast ? 'submitAndShowResults()' : `goPage('${nextPage}')`}">${isLast ? '結果を見る →' : '次のクラスター →'}</button>
+    </div>
+    </div></div>`;
+  });
+  root.innerHTML = html;
+  // Attach event listeners on radio inputs
+  document.querySelectorAll('input[type=radio][data-qid]').forEach(input => {
+    input.addEventListener('change', e => {
+      saveResponse(e.target.dataset.qid, parseInt(e.target.value));
+    });
+  });
+}
+
+function renderLikert(qid, labels) {
+  let html = `<div class="likert">`;
+  for (let v = 1; v <= 5; v++) {
+    html += `<label>
+      <input type="radio" name="${qid}" value="${v}" data-qid="${qid}">
+      <span class="likert-content">
+        <span class="num">${v}</span>${labels[v-1]}
+      </span>
+    </label>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+// ====== Response handling ======
+function saveResponse(qid, value) {
+  state.responses[qid] = value;
+  saveToStorage();
+  updateProgress();
+  showAutosave();
+}
+
+function saveMultiResponse(qid, checkbox, max) {
+  if (!Array.isArray(state.responses[qid])) state.responses[qid] = [];
+  // De-duplicate: prevent double-add if value already in state
+  state.responses[qid] = state.responses[qid].filter(v => v !== checkbox.value);
+  if (checkbox.checked) {
+    if (max > 0 && state.responses[qid].length >= max) {
+      checkbox.checked = false;
+      alert(`最大${max}つまで選択してください`);
+      return;
+    }
+    state.responses[qid].push(checkbox.value);
+  }
+  saveToStorage();
+  updateProgress();
+}
+
+// ====== Storage ======
+function saveToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      responses: state.responses,
+      currentPage: state.currentPage,
+      timestamp: new Date().toISOString()
+    }));
+  } catch(e) { console.warn("Storage failed:", e); }
+}
+
+function loadFromStorage() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) return false;
+    const parsed = JSON.parse(data);
+    if (parsed.responses) state.responses = parsed.responses;
+    return true;
+  } catch(e) { return false; }
+}
+
+function loadDraft() {
+  if (loadFromStorage()) {
+    // Apply to UI
+    Object.keys(state.responses).forEach(qid => {
+      const v = state.responses[qid];
+      if (Array.isArray(v)) {
+        v.forEach(opt => {
+          const cb = document.querySelector(`input[type=checkbox][value="${opt.replace(/"/g,'&quot;')}"]`);
+          if (cb && cb.parentElement.parentElement.previousElementSibling?.textContent.includes(qid.replace('ctx_',''))) cb.checked = true;
+        });
+        // Simpler: iterate all checkboxes in group
+        const allCheckboxes = document.querySelectorAll(`input[type=checkbox][value]`);
+        allCheckboxes.forEach(cb => {
+          if (v.includes(cb.value)) {
+            // Match by parent context - approximate
+            cb.checked = true;
+          }
+        });
+      } else if (typeof v === 'number') {
+        const radio = document.querySelector(`input[type=radio][data-qid="${qid}"][value="${v}"]`);
+        if (radio) radio.checked = true;
+      } else {
+        const el = document.getElementById(qid);
+        if (el) el.value = v;
+      }
+    });
+    updateProgress();
+    alert(`前回の回答を復元しました（${countAnswered()} / 94 問完了）`);
+    startSurvey();
+  } else {
+    alert("保存された回答が見つかりませんでした");
+  }
+}
+
+function countAnswered() {
+  let c = 0;
+  // Context: count non-empty
+  QUESTIONS_DATA.contextQuestions.forEach(q => {
+    const v = state.responses[q.id];
+    if (q.type === "multi") { if (Array.isArray(v) && v.length > 0) c++; }
+    else if (v !== undefined && v !== "" && v !== null) c++;
+  });
+  // Survey: count answered radio
+  QUESTIONS_DATA.clusters.forEach(cluster => {
+    cluster.areas.forEach(area => {
+      if (state.responses[`q_${area.num}_imp`] !== undefined) c++;
+      area.capability.forEach((_, si) => {
+        if (state.responses[`q_${area.num}_cap_${si+1}`] !== undefined) c++;
+      });
+    });
+  });
+  return c;
+}
+
+function updateProgress() {
+  const answered = countAnswered();
+  const pct = (answered / state.totalQuestions) * 100;
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("progressCount").textContent = `${answered} / 94`;
+  const labelEl = document.getElementById("progressLabel");
+  if (state.currentPage === "page-welcome") labelEl.textContent = "診断スタート";
+  else if (state.currentPage === "page-context") labelEl.textContent = "ステップ 1/8 ：組織情報";
+  else if (state.currentPage.startsWith("page-survey-")) {
+    const idx = parseInt(state.currentPage.replace("page-survey-",""));
+    const cluster = QUESTIONS_DATA.clusters[idx];
+    labelEl.textContent = `ステップ ${idx+2}/8 ：${cluster.id}. ${cluster.name}`;
+  } else if (state.currentPage === "page-results") labelEl.textContent = "診断完了 ✓";
+}
+
+// ====== Navigation ======
+function startSurvey() {
+  goPage("page-context");
+}
+
+function goPage(pageId) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  const target = document.getElementById(pageId);
+  if (target) {
+    target.classList.add("active");
+    state.currentPage = pageId;
+    saveToStorage();
+    window.scrollTo({top:0, behavior:"smooth"});
+    updateProgress();
+  }
+}
+
+function showAutosave() {
+  const el = document.getElementById("autosaveTip");
+  el.classList.add("show");
+  clearTimeout(showAutosave._t);
+  showAutosave._t = setTimeout(() => el.classList.remove("show"), 1200);
+}
+
+// ====== Scoring ======
+function computeScores() {
+  const scores = {
+    overall: 0,
+    clusters: [],
+    areas: [],
+    needToAct: [],
+    strengths: []
+  };
+
+  // Per-area scores
+  QUESTIONS_DATA.clusters.forEach(cluster => {
+    let cIimp = 0, cCap = 0, cAreaCount = 0;
+    const cAreas = [];
+    cluster.areas.forEach(area => {
+      const imp = state.responses[`q_${area.num}_imp`] || 0;
+      const capScores = area.capability.map((_, si) => state.responses[`q_${area.num}_cap_${si+1}`] || 0);
+      const cap = capScores.length ? capScores.reduce((s,v)=>s+v,0) / capScores.length : 0;
+      const areaObj = {
+        num: area.num,
+        name: area.name,
+        cluster: cluster.id,
+        clusterName: cluster.name,
+        importance: imp,
+        capability: cap,
+        gap: imp - cap,
+        // Normalize to 0-100
+        importanceScore: imp * 20,
+        capabilityScore: cap * 20
+      };
+      scores.areas.push(areaObj);
+      cAreas.push(areaObj);
+      cIimp += imp;
+      cCap += cap;
+      cAreaCount++;
+    });
+    scores.clusters.push({
+      id: cluster.id,
+      name: cluster.name,
+      importance: cIimp / cAreaCount,
+      capability: cCap / cAreaCount,
+      importanceScore: (cIimp / cAreaCount) * 20,
+      capabilityScore: (cCap / cAreaCount) * 20,
+      areas: cAreas
+    });
+  });
+
+  // Overall = weighted avg of capability by importance
+  let totW = 0, weightedCap = 0;
+  scores.areas.forEach(a => {
+    totW += a.importance;
+    weightedCap += a.capability * a.importance;
+  });
+  scores.overall = totW > 0 ? Math.round((weightedCap / totW) * 20) : 0;
+
+  // Sort areas
+  const sortedByImportance = [...scores.areas].sort((a,b) => b.importance - a.importance);
+  const sortedByCapability = [...scores.areas].sort((a,b) => b.capability - a.capability);
+  scores.areas.forEach(a => {
+    a.importanceRank = sortedByImportance.findIndex(x => x.num === a.num) + 1;
+    a.capabilityRank = sortedByCapability.findIndex(x => x.num === a.num) + 1;
+  });
+
+  // 4-quadrant priority classification (median-based)
+  const allImp = scores.areas.map(a => a.importance).filter(v => v > 0);
+  const allCap = scores.areas.map(a => a.capability).filter(v => v > 0);
+  function median(arr) {
+    if (!arr.length) return 3;
+    const s = [...arr].sort((a,b)=>a-b);
+    const m = Math.floor(s.length/2);
+    return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
+  }
+  const medImp = median(allImp);
+  const medCap = median(allCap);
+  scores.medianImp = medImp;
+  scores.medianCap = medCap;
+  scores.areas.forEach(a => {
+    if (a.importance >= medImp && a.capability < medCap) a.priority = "strong";       // 最優先（要対応）
+    else if (a.importance >= medImp && a.capability >= medCap) a.priority = "strength"; // 維持・強化
+    else if (a.importance < medImp && a.capability < medCap) a.priority = "medium";    // 中期対応
+    else a.priority = "low";                                                            // 効率化・最適化
+  });
+
+  scores.needToAct = scores.areas.filter(a => a.priority === "strong").sort((a,b)=>b.gap - a.gap);
+  scores.strengths = scores.areas.filter(a => a.priority === "strength").sort((a,b)=>b.capability - a.capability);
+  scores.midTerm = scores.areas.filter(a => a.priority === "medium");
+  scores.optimize = scores.areas.filter(a => a.priority === "low");
+  scores.topPriorities = [...scores.areas].sort((a,b) => {
+    // sort by importance desc, capability asc (gap-focused)
+    if (a.importance !== b.importance) return b.importance - a.importance;
+    return a.capability - b.capability;
+  }).filter(a => a.importance > a.capability).slice(0, 5);
+
+  return scores;
+}
+
+// ====== Submit & Results ======
+function submitAndShowResults() {
+  const answered = countAnswered();
+  if (answered < 120) {
+    if (!confirm(`未回答が ${94 - answered} 問あります。このまま結果を表示しますか？（未回答は0点として計算されます）`)) return;
+  }
+  const scores = computeScores();
+  state.lastScores = scores;
+  goPage("page-results");
+  renderResults(scores);
+}
+
+function renderResults(scores) {
+  // Overall
+  document.getElementById("overallScore").textContent = scores.overall;
+  const lbl = scores.overall >= 80 ? "Advanced：先進的水準" : scores.overall >= 65 ? "Mature：成熟水準" : scores.overall >= 50 ? "Developing：発展途上" : scores.overall >= 35 ? "Basic：基本水準" : "Initial：初期段階";
+  document.getElementById("overallLabel").textContent = lbl;
+
+  // KPIs
+  const sortByCap = [...scores.areas].sort((a,b)=>b.capability - a.capability);
+  const sortByGap = [...scores.areas].sort((a,b)=>b.gap - a.gap);
+  document.getElementById("topStrength").textContent = sortByCap[0].name.split("（")[0];
+  document.getElementById("topStrengthScore").textContent = `能力スコア ${Math.round(sortByCap[0].capabilityScore)} / 100`;
+  document.getElementById("topGap").textContent = sortByGap[0].name.split("（")[0];
+  document.getElementById("topGapDetail").textContent = `重要度 ${sortByGap[0].importance.toFixed(1)} ／ 能力 ${sortByGap[0].capability.toFixed(1)}（差 ${sortByGap[0].gap.toFixed(1)}）`;
+  document.getElementById("needActCount").textContent = scores.needToAct.length;
+  document.getElementById("strengthCount").textContent = scores.strengths.length;
+
+  // Radar chart
+  if (window._radarChart) window._radarChart.destroy();
+  window._radarChart = new Chart(document.getElementById("radarChart").getContext("2d"), {
+    type: "radar",
+    data: {
+      labels: scores.clusters.map(c => `${c.id}. ${c.name.length > 12 ? c.name.substring(0,11)+"…" : c.name}`),
+      datasets: [
+        { label: "重要度", data: scores.clusters.map(c=>c.importanceScore), backgroundColor: "rgba(249,97,103,0.15)", borderColor: "#F96167", borderWidth: 2, pointBackgroundColor: "#F96167" },
+        { label: "現状能力", data: scores.clusters.map(c=>c.capabilityScore), backgroundColor: "rgba(30,39,97,0.15)", borderColor: "#1E2761", borderWidth: 2, pointBackgroundColor: "#1E2761" }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: { min:0, max:100, ticks:{stepSize:20,backdropColor:"transparent"} } },
+      plugins: { legend: { position: "bottom" } }
+    }
+  });
+
+  // Matrix scatter (4-quadrant priority matrix)
+  if (window._matrixChart) window._matrixChart.destroy();
+  const palette = { strong: "#E24B4A", strength: "#1D9E75", medium: "#EF9F27", low: "#185FA5" };
+  const labelMap = { strong: "最優先（要対応）", strength: "維持・強化", medium: "中期対応", low: "効率化・最適化" };
+  const xMid = scores.medianCap * 20;
+  const yMid = scores.medianImp * 20;
+  const datasets = ["strong","strength","medium","low"].map(p => ({
+    label: labelMap[p],
+    data: scores.areas.filter(a=>a.priority===p).map(a=>({x:a.capabilityScore, y:a.importanceScore, areaName: a.name, areaNum: a.num})),
+    backgroundColor: palette[p],
+    borderColor: "#FFFFFF",
+    borderWidth: 1.5,
+    pointRadius: 8,
+    pointHoverRadius: 11
+  }));
+
+  // Quadrant background plugin
+  const quadrantBg = {
+    id: 'quadrantBg',
+    beforeDraw(chart) {
+      const {ctx, chartArea, scales} = chart;
+      if (!chartArea) return;
+      const {left, top, right, bottom} = chartArea;
+      const xMidPx = scales.x.getPixelForValue(xMid);
+      const yMidPx = scales.y.getPixelForValue(yMid);
+      ctx.save();
+      // Top-left: 最優先 (red)
+      ctx.fillStyle = 'rgba(226, 75, 74, 0.10)';
+      ctx.fillRect(left, top, xMidPx-left, yMidPx-top);
+      // Top-right: 維持・強化 (green)
+      ctx.fillStyle = 'rgba(29, 158, 117, 0.10)';
+      ctx.fillRect(xMidPx, top, right-xMidPx, yMidPx-top);
+      // Bottom-left: 中期対応 (orange)
+      ctx.fillStyle = 'rgba(239, 159, 39, 0.10)';
+      ctx.fillRect(left, yMidPx, xMidPx-left, bottom-yMidPx);
+      // Bottom-right: 効率化 (blue)
+      ctx.fillStyle = 'rgba(24, 95, 165, 0.10)';
+      ctx.fillRect(xMidPx, yMidPx, right-xMidPx, bottom-yMidPx);
+      // Threshold lines (dashed)
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(xMidPx, top); ctx.lineTo(xMidPx, bottom); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(left, yMidPx); ctx.lineTo(right, yMidPx); ctx.stroke();
+      // Quadrant labels
+      ctx.setLineDash([]);
+      ctx.font = 'bold 10.5px sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = '#E24B4A';
+      ctx.textAlign = 'left';
+      ctx.fillText('最優先（要対応）', left+8, top+8);
+      ctx.font = '9.5px sans-serif';
+      ctx.fillText('高重要度・低能力', left+8, top+22);
+      ctx.font = 'bold 10.5px sans-serif';
+      ctx.fillStyle = '#1D9E75';
+      ctx.textAlign = 'right';
+      ctx.fillText('維持・強化', right-8, top+8);
+      ctx.font = '9.5px sans-serif';
+      ctx.fillText('高重要度・高能力', right-8, top+22);
+      ctx.font = 'bold 10.5px sans-serif';
+      ctx.fillStyle = '#EF9F27';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('中期対応', left+8, bottom-22);
+      ctx.font = '9.5px sans-serif';
+      ctx.fillText('低重要度・低能力', left+8, bottom-8);
+      ctx.font = 'bold 10.5px sans-serif';
+      ctx.fillStyle = '#185FA5';
+      ctx.textAlign = 'right';
+      ctx.fillText('効率化・最適化', right-8, bottom-22);
+      ctx.font = '9.5px sans-serif';
+      ctx.fillText('低重要度・高能力', right-8, bottom-8);
+      ctx.restore();
+    }
+  };
+
+  // Point label plugin (numbered labels next to dots)
+  const pointLabels = {
+    id: 'pointLabels',
+    afterDatasetsDraw(chart) {
+      const {ctx} = chart;
+      ctx.save();
+      ctx.font = '9.5px sans-serif';
+      ctx.fillStyle = '#1A1A2E';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        meta.data.forEach((pt, i) => {
+          const d = ds.data[i];
+          if (!d) return;
+          // Truncate long names
+          const shortName = d.areaName.length > 18 ? d.areaName.substring(0,17) + '…' : d.areaName;
+          ctx.fillText(`${d.areaNum}. ${shortName}`, pt.x + 10, pt.y);
+        });
+      });
+      ctx.restore();
+    }
+  };
+
+  window._matrixChart = new Chart(document.getElementById("matrixChart").getContext("2d"), {
+    type: "scatter",
+    data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 100, top: 10, bottom: 10 } },
+      scales: {
+        x: { min:0, max:100, title:{display:true,text:"現在の能力レベル（%）→", font:{weight:'bold',size:12}}, grid:{color:"#E1E5ED",drawTicks:true} },
+        y: { min:0, max:100, title:{display:true,text:"↑ 将来の重要度（%）", font:{weight:'bold',size:12}}, grid:{color:"#E1E5ED",drawTicks:true} }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw.areaNum}. ${ctx.raw.areaName}（重${ctx.raw.y.toFixed(0)} ／ 能${ctx.raw.x.toFixed(0)}）` } }
+      }
+    },
+    plugins: [quadrantBg, pointLabels]
+  });
+
+  // Priority list
+  document.getElementById("priorityList").innerHTML = scores.topPriorities.map((a,i) =>
+    `<div class="priority-item urgent">
+      <div class="priority-rank">${i+1}</div>
+      <div class="priority-name">${a.num}. ${a.name}</div>
+      <div class="priority-scores">重要度<strong> ${a.importance.toFixed(1)}</strong> ／ 能力<strong> ${a.capability.toFixed(1)}</strong> ／ ギャップ<strong> ${a.gap.toFixed(1)}</strong></div>
+    </div>`
+  ).join("") || `<div style="text-align:center;color:var(--text-light);padding:24px">未回答のため計算できません</div>`;
+
+  // Strengths list
+  const topStrengths = [...scores.areas].sort((a,b)=>b.capability - a.capability).slice(0,5);
+  document.getElementById("strengthList").innerHTML = topStrengths.map((a,i) =>
+    `<div class="priority-item">
+      <div class="priority-rank">${i+1}</div>
+      <div class="priority-name">${a.num}. ${a.name}</div>
+      <div class="priority-scores">重要度<strong> ${a.importance.toFixed(1)}</strong> ／ 能力<strong> ${a.capability.toFixed(1)}</strong></div>
+    </div>`
+  ).join("");
+  // Render cluster definitions
+  document.getElementById("clusterDefList").innerHTML = CLUSTER_DEFS.map(c => 
+    '<div class="cluster-def-row">' +
+      '<div class="cluster-def-badge">' + c.id + '</div>' +
+      '<div class="cluster-def-body">' +
+        '<div class="cluster-def-name">' + c.name + '</div>' +
+        '<div class="cluster-def-desc">' + c.desc + '</div>' +
+      '</div>' +
+      '<div class="cluster-def-areas">領域 ' + c.areas + '</div>' +
+    '</div>'
+  ).join("");
+
+  // Render matrix quadrant counts
+  const counts = { strong: 0, strength: 0, medium: 0, low: 0 };
+  scores.areas.forEach(a => counts[a.priority]++);
+  const countItems = [
+    { key: "strong", label: "最優先", color: "#E24B4A" },
+    { key: "strength", label: "維持・強化", color: "#1D9E75" },
+    { key: "medium", label: "中期対応", color: "#EF9F27" },
+    { key: "low", label: "効率化", color: "#185FA5" }
+  ];
+  document.getElementById("matrixCounts").innerHTML = countItems.map(it => 
+    '<div class="matrix-count-card" style="border-color:' + it.color + '">' +
+      '<div class="lbl"><span class="dot" style="background:' + it.color + '"></span><span style="color:' + it.color + '">' + it.label + '</span></div>' +
+      '<div class="cnt"><strong>' + counts[it.key] + '</strong>領域</div>' +
+    '</div>'
+  ).join("");
+
+  // Render ranking table
+  const sortedByImp = [...scores.areas].sort((a, b) => b.importance - a.importance);
+  const priLabels = { strong: "最優先（要対応）", strength: "維持・強化", medium: "中期対応", low: "効率化・最適化" };
+  document.getElementById("rankTableBody").innerHTML = sortedByImp.map((a, i) => {
+    const cluster = scores.clusters.find(c => c.areas.some(ar => ar.num === a.num));
+    const clusterShort = cluster ? cluster.id : "";
+    const gapClass = a.gap > 0 ? "gap-positive" : (a.gap < 0 ? "gap-negative" : "");
+    return '<tr>' +
+      '<td class="col-rank">' + (i+1) + '</td>' +
+      '<td class="col-name">' + a.num + '. ' + a.name + '</td>' +
+      '<td class="col-cluster">' + clusterShort + '</td>' +
+      '<td class="col-num">' + a.importance.toFixed(1) + '</td>' +
+      '<td class="col-num">' + a.capability.toFixed(1) + '</td>' +
+      '<td class="col-num col-gap ' + gapClass + '">' + (a.gap > 0 ? '+' : '') + a.gap.toFixed(1) + '</td>' +
+      '<td class="col-priority"><span class="priority-pill ' + a.priority + '">' + priLabels[a.priority] + '</span></td>' +
+    '</tr>';
+  }).join("");
+
+  // Render area definitions with results
+  document.getElementById("areaDefList").innerHTML = [...scores.areas]
+    .sort((a,b) => a.num - b.num)
+    .map(a => {
+      const info = AREA_INFO[a.num] || { desc: "", topics: [] };
+      const cluster = scores.clusters.find(c => c.areas.some(ar => ar.num === a.num));
+      const clusterShort = cluster ? cluster.id : "";
+      const clusterName = cluster ? cluster.name : "";
+      const priLabel = priLabels[a.priority] || "";
+      const topicsHtml = info.topics.map(t => '<span class="topic-tag">' + t + '</span>').join("");
+      return '<div class="area-def-card priority-' + a.priority + '">'+
+        '<div class="area-def-head">'+
+          '<span class="area-def-num">' + a.num + '</span>'+
+          '<span class="area-def-name">' + a.name + '</span>'+
+          '<span class="area-def-cluster">' + clusterShort + '. ' + clusterName + '</span>'+
+          '<span class="area-def-priority">' + priLabel + '</span>'+
+        '</div>'+
+        '<div class="area-def-scores">重要度<strong> ' + a.importance.toFixed(1) + '</strong> ／ 能力<strong> ' + a.capability.toFixed(1) + '</strong> ／ ギャップ<strong> ' + a.gap.toFixed(1) + '</strong></div>'+
+        '<div class="area-def-desc">' + info.desc + '</div>'+
+        '<div class="area-def-topics-label">含まれる要素：</div>' + topicsHtml +
+      '</div>';
+    }).join("");
+
+}
+
+// ====== Export ======
+function exportJSON() {
+  const scores = state.lastScores || computeScores();
+  const data = {
+    timestamp: new Date().toISOString(),
+    responses: state.responses,
+    scores: scores
+  };
+  download(JSON.stringify(data, null, 2), "hr_diagnostic_results.json", "application/json");
+}
+
+function exportCSV() {
+  const scores = state.lastScores || computeScores();
+  const rows = [["クラスター","領域番号","領域名","重要度(1-5)","能力(1-5)","重要度スコア(0-100)","能力スコア(0-100)","重要度ランク","能力ランク","ギャップ","優先度区分"]];
+  scores.areas.forEach(a => {
+    rows.push([a.cluster, a.num, a.name, a.importance.toFixed(2), a.capability.toFixed(2), a.importanceScore.toFixed(0), a.capabilityScore.toFixed(0), a.importanceRank, a.capabilityRank, a.gap.toFixed(2), a.priority]);
+  });
+  const csv = "﻿" + rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  download(csv, "hr_diagnostic_results.csv", "text/csv");
+}
+
+function download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function restartSurvey() {
+  if (!confirm("これまでの回答をすべて消去して最初からやり直しますか？")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state.responses = {};
+  document.querySelectorAll("input[type=radio]").forEach(i => i.checked = false);
+  document.querySelectorAll("input[type=checkbox]").forEach(i => i.checked = false);
+  document.querySelectorAll("select").forEach(s => s.selectedIndex = 0);
+  document.querySelectorAll("textarea").forEach(t => t.value = "");
+  goPage("page-welcome");
+}
+
+// Boot
+init();
+</script>
+</body>
+</html>
